@@ -52,6 +52,7 @@ module Kitchen
       default_config :tls_key,       nil
       default_config :publish_all,   false
       default_config :wait_for_sshd, true
+      default_config :sshd_port,     22
       default_config :private_key,   File.join(Dir.pwd, '.kitchen', 'docker_id_rsa')
       default_config :public_key,    File.join(Dir.pwd, '.kitchen', 'docker_id_rsa.pub')
       default_config :build_options, nil
@@ -353,7 +354,7 @@ module Kitchen
         Array(config[:security_opt]).each {|opt| cmd << " --security-opt=#{opt}"} if config[:security_opt]
         extra_run_options = config_to_options(config[:run_options])
         cmd << " #{extra_run_options}" unless extra_run_options.empty?
-        cmd << " #{image_id} #{config[:run_command]}"
+        cmd << " #{image_id} #{config[:run_command]} -o Port=#{config[:sshd_port]}"
         cmd
       end
 
@@ -379,7 +380,7 @@ module Kitchen
 
       def container_ssh_port(state)
         begin
-          output = docker_command("port #{state[:container_id]} 22/tcp")
+          output = docker_command("port #{state[:container_id]} #{config[:sshd_port]}/tcp")
           parse_container_ssh_port(output)
         rescue
           raise ActionFailed,
